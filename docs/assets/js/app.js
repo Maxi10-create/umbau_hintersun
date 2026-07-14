@@ -229,22 +229,14 @@
       { h: 'Position', get: function (r) { return esc(r.item); } },
       { h: 'Herkunft', get: function (r) { return r.offer_id || String(r.source_type).toLowerCase() === 'auftrag' ? '<span class="tag ok">Vergabe</span>' : '<span class="tag">manuell</span>'; } },
       { h: 'Betrag', get: function (r) { return eur(r.gross); } },
+      { h: 'Bezahlt', get: function (r) { var pa = C.num(r.paid_amount); var g = C.num(r.gross); return pa > 0 ? eur(pa) + (g > 0 && pa < g - 0.01 ? ' <span class="tag warn">Teilzahlung</span>' : ' <span class="tag ok">voll</span>') : '<span class="muted">—</span>'; } },
+      { h: 'Offen', get: function (r) { var open = C.num(r.gross) - C.num(r.paid_amount); return open > 0.01 ? eur(open) : '<span class="ok">0 €</span>'; } },
       { h: 'Bezahlt von', get: function (r) { return esc(r.paid_by || '—'); } },
       { h: 'Schlüssel', get: function (r) { return (r.share_w1 != null && r.share_w1 !== '') ? (r.share_w1 + '/' + r.share_w2) : '—'; } },
       { h: 'W1', get: function (r) { return '<span class="w1cell">' + eur(C.shareOf(r, 'w1')) + '</span>'; } },
-      { h: 'W2', get: function (r) { return '<span class="w2cell">' + eur(C.shareOf(r, 'w2')) + '</span>'; } },
-      { h: 'Status', get: function (r) { return tag(r.status); } }
-    ], { note: 'Vergebene Aufträge kommen automatisch aus „Gewerke &amp; Vergabe". Nicht-vergabe-bezogene Kosten (Gebühren, Notar, Eigenleistung …) hier anlegen, bearbeiten oder löschen.',
-         sort: function (a, b) { return String(a.date).localeCompare(String(b.date)); },
-         addLabel: 'Manuelle Kostenposition' });
-
-    section('payments-table', 'payments', [
-      { h: 'Datum', get: function (r) { return esc(r.date); } },
-      { h: 'Empfänger', get: function (r) { return esc(r.supplier); } },
-      { h: 'Betrag', get: function (r) { return eur(r.amount_gross); } },
-      { h: 'Bezahlt von', get: function (r) { return esc(r.paid_by); } },
-      { h: 'Bezug', get: function (r) { return esc(r.comment || r.related_cost_id || ''); } }
-    ]);
+      { h: 'W2', get: function (r) { return '<span class="w2cell">' + eur(C.shareOf(r, 'w2')) + '</span>'; } }
+    ], { note: 'Eine Zeile pro Kostenposition – Betrag, bereits bezahlter Teil, Zahler und Kostenschlüssel in einem. Vergebene Aufträge kommen automatisch aus „Gewerke &amp; Vergabe"; sonstige Kosten hier anlegen, bearbeiten oder löschen. Der Saldo rechnet aus dem tatsächlich bezahlten Betrag.',
+         sort: function (a, b) { return String(a.date).localeCompare(String(b.date)); } });
   }
 
   // ==== FINANZIERUNG (Tab finance) =====================================
