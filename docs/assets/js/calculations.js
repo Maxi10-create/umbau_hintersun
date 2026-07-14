@@ -151,7 +151,12 @@
       var w1 = shareOf(c, 'w1'), w2 = shareOf(c, 'w2');
       b.ist += g; b.istW1 += w1; b.istW2 += w2; b.count++;
       if (c.offer_id || st === 'auftrag') b.fromAward += g; else b.manual += g;
-      if (isTrue(c.paid) || low(c.status).indexOf('bezahlt') >= 0) { b.paid += g; b.paidW1 += w1; b.paidW2 += w2; }
+      var pa = n(c.paid_amount);                       // bereits bezahlter Teilbetrag
+      if (pa <= 0 && (isTrue(c.paid) || low(c.status).indexOf('bezahlt') >= 0)) pa = g; // Altdaten ohne paid_amount
+      if (pa > 0) {
+        var frac = g > 0 ? Math.min(1, pa / g) : 1;
+        b.paid += pa; b.paidW1 += w1 * frac; b.paidW2 += w2 * frac;
+      }
     });
     var rows = Object.keys(blocks).map(function (k){ return blocks[k]; });
     var totals = rows.reduce(function (a, b) {
@@ -381,20 +386,23 @@
   // Für jede bezahlte Ist-Position: Zahler trägt den vollen Betrag, geschuldet
   // ist aber nur der eigene Kostenschlüssel-Anteil. Differenz = Ausgleich.
   function calcSaldo(data) {
-    var costs = (data.cost_positions || []).filter(function (c) { return isTrue(c.paid) || low(c.status).indexOf('bezahlt') >= 0; });
-    var paidByW1 = 0, paidByW2 = 0, oweW1 = 0, oweW2 = 0;
     var rows = [];
-    costs.forEach(function (c) {
+    var paidByW1 = 0, paidByW2 = 0, oweW1 = 0, oweW2 = 0;
+    (data.cost_positions || []).filter(isActive).forEach(function (c) {
       var g = n(c.gross);
+      var pa = n(c.paid_amount);
+      if (pa <= 0 && (isTrue(c.paid) || low(c.status).indexOf('bezahlt') >= 0)) pa = g; // Altdaten
+      if (pa <= 0) return;                                   // nur real bezahlte Beträge zählen für den Saldo
       var pb = low(c.paid_by || '');
       var payer = (pb.indexOf('ingrid') >= 0 || pb === 'w1') ? 'W1' : ((pb.indexOf('maxi') >= 0 || pb === 'w2') ? 'W2' : '');
-      var w1 = shareOf(c, 'w1'), w2 = shareOf(c, 'w2');
-      if (payer === 'W1') paidByW1 += g; else if (payer === 'W2') paidByW2 += g;
+      var frac = g > 0 ? Math.min(1, pa / g) : 1;
+      var w1 = shareOf(c, 'w1') * frac, w2 = shareOf(c, 'w2') * frac;   // Schlüsselanteil auf den bezahlten Teil
+      if (payer === 'W1') paidByW1 += pa; else if (payer === 'W2') paidByW2 += pa;
       oweW1 += w1; oweW2 += w2;
-      rows.push({ item: c.item, gross: g, payer: payer, shareW1: w1, shareW2: w2, date: c.date, paidBy: c.paid_by });
+      rows.push({ item: c.item, gross: g, paid: pa, payer: payer, shareW1: w1, shareW2: w2, date: c.date, paidBy: c.paid_by });
     });
-    var balanceW1 = paidByW1 - oweW1; // >0: W1 hat zu viel getragen
-    var settle = balanceW1;           // Betrag, den W2 an W1 zahlen muss (wenn >0)
+    var balanceW1 = paidByW1 - oweW1;
+    var settle = balanceW1;
     return { paidByW1: paidByW1, paidByW2: paidByW2, oweW1: oweW1, oweW2: oweW2,
       balanceW1: balanceW1, settle: settle, rows: rows,
       direction: settle > 0.5 ? 'W2→W1' : (settle < -0.5 ? 'W1→W2' : 'ausgeglichen'),
