@@ -11,7 +11,7 @@
  * 5) Bereitstellen > Neue Bereitstellung > Web-App.
  */
 
-const BACKEND_VERSION = '6.1.0';
+const BACKEND_VERSION = '6.2.0';
 const PROJECT_NAME = 'Umbau Hintersun 8';
 const SHEET_ORDER = ["settings", "parties", "areas", "budget_estimates", "cost_positions", "offers", "offer_items", "payments", "financing", "bank_offers", "subsidies", "task_categories", "timeline_tasks", "trades", "companies", "bureaucracy", "technicians", "energy_inputs", "energy_results", "documents", "decisions", "cashflow", "audit_log"];
 const SCHEMA = {
@@ -235,6 +235,11 @@ const SCHEMA = {
     "status",
     "blocks_construction_start",
     "comment",
+    "category",
+    "budget_block",
+    "party_assignment",
+    "share_w1",
+    "share_w2",
     "created_at",
     "updated_at"
   ],
@@ -1301,7 +1306,7 @@ const SEED_DATA = {
   "offers": [
     {
       "offer_id": "OFF-RESCH-20260522",
-      "trade": "Kueche",
+      "trade": "Küche",
       "compare_group": "Küche",
       "supplier": "Resch Möbel GmbH",
       "date": "2026-05-22",
@@ -1314,8 +1319,8 @@ const SEED_DATA = {
       "active": null,
       "party_assignment": "W2",
       "split_key": null,
-      "share_w1": 46.6,
-      "share_w2": 53.4,
+      "share_w1": "0",
+      "share_w2": "100",
       "score": "82",
       "included": "Lieferung, Montage",
       "excluded": "Maurer, Hydrauliker, Elektriker, nicht explizit angebotene Arbeiten",
@@ -1326,7 +1331,7 @@ const SEED_DATA = {
     },
     {
       "offer_id": "OFF-STAMPFL-20260320",
-      "trade": "Kueche",
+      "trade": "Küche",
       "compare_group": "Küche",
       "supplier": "Stampfl Küche & Wohnen",
       "date": "2026-03-20",
@@ -1339,8 +1344,8 @@ const SEED_DATA = {
       "active": null,
       "party_assignment": "W2",
       "split_key": null,
-      "share_w1": 46.6,
-      "share_w2": 53.4,
+      "share_w1": "0",
+      "share_w2": "100",
       "score": "78",
       "included": "Lieferung, Montage, Massabnahme, Detailplaene, Installationsplaene",
       "excluded": "MwSt, Wasseranschluss, Wasserhahn, Beleuchtung, evtl. Gipskarton",
@@ -2613,7 +2618,12 @@ const SEED_DATA = {
       "blocks_construction_start": "TRUE",
       "comment": "gesetzlich erforderlich vor Baubeginn",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "category": "Planung & Sicherheit",
+      "budget_block": "Planung & Technik",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
     },
     {
       "trade_id": "TR-BAU",
@@ -2626,7 +2636,12 @@ const SEED_DATA = {
       "blocks_construction_start": "TRUE",
       "comment": "Hauptgewerk",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "category": "Rohbau",
+      "budget_block": "Abbruch & Rohbau",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
     },
     {
       "trade_id": "TR-FEN",
@@ -2639,7 +2654,12 @@ const SEED_DATA = {
       "blocks_construction_start": "FALSE",
       "comment": "EG-Fenster/Klimahaus/Zero-Verglasung/Raffstores klaeren",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "category": "Gebäudehülle",
+      "budget_block": "Wohnung B (OG+DG)",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
     },
     {
       "trade_id": "TR-ZIM",
@@ -2652,7 +2672,12 @@ const SEED_DATA = {
       "blocks_construction_start": "FALSE",
       "comment": "Dachfenster mit Verschattungsrollos",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "category": "Gebäudehülle",
+      "budget_block": "Abbruch & Rohbau",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
     },
     {
       "trade_id": "TR-SPEN",
@@ -2665,7 +2690,12 @@ const SEED_DATA = {
       "blocks_construction_start": "FALSE",
       "comment": "Aluminium-Blechdach empfohlen",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "category": "Gebäudehülle",
+      "budget_block": "Abbruch & Rohbau",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
     },
     {
       "trade_id": "TR-HLS",
@@ -2678,7 +2708,12 @@ const SEED_DATA = {
       "blocks_construction_start": "TRUE",
       "comment": "Lueftung, WP, Pellet, Sanitaer",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "category": "Haustechnik",
+      "budget_block": "Wohnung B (OG+DG)",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
     },
     {
       "trade_id": "TR-ELT",
@@ -2691,7 +2726,12 @@ const SEED_DATA = {
       "blocks_construction_start": "TRUE",
       "comment": "PV, Batterie, KNX, Wallbox, Blitzschutz",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "category": "Haustechnik",
+      "budget_block": "Wohnung B (OG+DG)",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
     },
     {
       "trade_id": "TR-SCHL",
@@ -2704,7 +2744,12 @@ const SEED_DATA = {
       "blocks_construction_start": "FALSE",
       "comment": "Carport Stahlkonstruktion empfohlen",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "category": "Metallbau",
+      "budget_block": "Wohnung B (OG+DG)",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
     },
     {
       "trade_id": "TR-BODEN",
@@ -2717,7 +2762,12 @@ const SEED_DATA = {
       "blocks_construction_start": "FALSE",
       "comment": "Balkonbelag und Aufbau klaeren",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "category": "Innenausbau",
+      "budget_block": "Wohnung B (OG+DG)",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
     },
     {
       "trade_id": "TR-MAL",
@@ -2730,7 +2780,12 @@ const SEED_DATA = {
       "blocks_construction_start": "FALSE",
       "comment": "Rogen Martin",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "category": "Innenausbau",
+      "budget_block": "Wohnung B (OG+DG)",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
     },
     {
       "trade_id": "TR-TISCH",
@@ -2743,7 +2798,30 @@ const SEED_DATA = {
       "blocks_construction_start": "FALSE",
       "comment": "Innentueren, Tischler",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "category": "Innenausbau",
+      "budget_block": "Innenausbau & Küche",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
+    },
+    {
+      "trade_id": "TR-KUE",
+      "trade": "Küche",
+      "priority": "mittel",
+      "owner": "Maximilian Hofer",
+      "target_request": "",
+      "target_award": "",
+      "status": "Angebot erfasst",
+      "blocks_construction_start": "FALSE",
+      "comment": "Kücheneinrichtung Wohnung B",
+      "category": "Innenausbau",
+      "budget_block": "Innenausbau & Küche",
+      "party_assignment": "W2",
+      "share_w1": "0",
+      "share_w2": "100",
+      "created_at": "2026-07-14T18:00:00.000Z",
+      "updated_at": "2026-07-14T18:00:00.000Z"
     }
   ],
   "companies": [
