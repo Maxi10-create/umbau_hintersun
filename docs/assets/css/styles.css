@@ -517,3 +517,14 @@ th.w1cell,th.w2cell{font-weight:600}
 
 /* Kosten-Herkunft Δ-Spalte */
 .budget-table .var.pos{color:var(--ok)} .budget-table .var.neg{color:var(--danger)}
+
+/* ===== v6.2 Gewerk-Kategorien ===== */
+.gewerk-cat-card{border:1px solid var(--line);border-radius:var(--radius-sm);margin-bottom:12px;overflow:hidden}
+.gewerk-cat-head{display:flex;align-items:center;gap:9px;padding:10px 13px;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.gewerk-cat-head strong{font-family:var(--serif);font-size:14.5px;flex:1}
+.gewerk-cat-dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.gewerk-cat-card .table-wrap{border:0;border-radius:0}
+.gewerk-cat-card tbody tr:hover{background:var(--accent-soft)}
+.award-cat-group{margin-bottom:20px}
+.award-cat-title{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);font-weight:600;margin:0 0 10px;padding-bottom:5px;border-bottom:1px dashed var(--line-2)}
