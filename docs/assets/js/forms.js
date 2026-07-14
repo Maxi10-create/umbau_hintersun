@@ -21,11 +21,14 @@
   // damit die Tabs interagieren.
   var BLOCKS = ['Abbruch & Rohbau','Wohnung A (EG)','Wohnung B (OG+DG)','Carport & Außenanlagen',
     'Planung & Technik','Innenausbau & Küche','Bürokratie & Gebühren'];
+  // Gewerk-Kategorien (frei erweiterbar) – für die Zuordnung im Gewerke-Tab
+  var GEWERK_CAT = ['Rohbau','Gebäudehülle','Haustechnik','Innenausbau','Metallbau',
+    'Planung & Sicherheit','Außenanlagen','Sonstiges'];
 
   // Feld-Definitionen je Tab. type: text|number|date|select|textarea|bool|split
   var SCHEMAS = {
     offers: { title: 'Angebot', fields: [
-      { k: 'trade', l: 'Gewerk', t: 'text', req: true },
+      { k: 'trade', l: 'Gewerk (aus Liste)', t: 'tradeselect', req: true, hint: 'wählt Kategorie, Budgetblock und W1/W2-Zuteilung automatisch' },
       { k: 'compare_group', l: 'Vergleichsgruppe', t: 'text', hint: 'z.B. "Küche" – mehrere Angebote derselben Gruppe werden verglichen, nicht doppelt gezählt' },
       { k: 'supplier', l: 'Anbieter / Firma', t: 'text', req: true },
       { k: 'date', l: 'Datum', t: 'date' },
@@ -34,7 +37,7 @@
       { k: 'vat_rate', l: 'MwSt %', t: 'number', def: 22 },
       { k: 'gross', l: 'Brutto € (leer = auto)', t: 'number' },
       { k: 'status', l: 'Status', t: 'select', opt: STATUS, def: 'Angebot erfasst' },
-      { k: 'party_assignment', l: 'Zuordnung', t: 'select', opt: PARTY },
+      { k: 'party_assignment', l: 'Zuteilung Wohnung', t: 'select', opt: PARTY, hint: 'leer = vom Gewerk übernehmen' },
       { k: 'split', l: 'Aufteilung W1/W2', t: 'split' },
       { k: 'score', l: 'Bewertung', t: 'text' },
       { k: 'excluded', l: 'Nicht enthalten / Risiko', t: 'textarea' },
@@ -124,9 +127,13 @@
       { k: 'comment', l: 'Beschreibung', t: 'textarea' }
     ]},
     trades: { title: 'Gewerk', fields: [
-      { k: 'trade', l: 'Gewerk', t: 'text', req: true },
+      { k: 'trade', l: 'Bezeichnung des Gewerks', t: 'text', req: true, hint: 'z.B. Fenster, Küche, Elektriker' },
+      { k: 'category', l: 'Gewerk-Kategorie', t: 'select', opt: GEWERK_CAT, req: true },
+      { k: 'budget_block', l: 'Budgetblock (Kostenzuordnung)', t: 'select', opt: BLOCKS, req: true },
+      { k: 'party_assignment', l: 'Zuteilung Wohnung', t: 'select', opt: PARTY, def: 'gemeinsam', hint: 'z.B. Küche → W2 / Maximilian' },
+      { k: 'split', l: 'Aufteilung W1/W2', t: 'split' },
       { k: 'priority', l: 'Priorität', t: 'select', opt: PRIO },
-      { k: 'owner', l: 'Verantwortlich', t: 'text' },
+      { k: 'owner', l: 'Verantwortlich', t: 'select', opt: OWNERS },
       { k: 'target_request', l: 'Ziel Anfrage', t: 'date' },
       { k: 'target_award', l: 'Ziel Vergabe', t: 'date' },
       { k: 'status', l: 'Status', t: 'select', opt: STATUS },
@@ -191,6 +198,14 @@
       var cats = (window.HinterSunStore ? window.HinterSunStore.table('task_categories') : []) || [];
       var copts = cats.map(function (c) { return '<option value="' + esc(c.category_id) + '" ' + (String(v) === String(c.category_id) ? 'selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
       return '<div class="field"><label>' + esc(f.l) + '</label><select name="' + f.k + '"><option value="">— keine —</option>' + copts + '</select>' + hint + '</div>';
+    }
+    if (f.t === 'tradeselect') {
+      var trades = (window.HinterSunStore ? window.HinterSunStore.table('trades') : []) || [];
+      var topts = trades.map(function (t) {
+        var label = (t.trade || t.trade_id) + (t.category ? ' · ' + t.category : '');
+        return '<option value="' + esc(t.trade) + '" ' + (String(v) === String(t.trade) ? 'selected' : '') + '>' + esc(label) + '</option>';
+      }).join('');
+      return '<div class="field"><label>' + esc(f.l) + '</label><select name="' + f.k + '" data-tradeselect="1"><option value="">— Gewerk wählen —</option>' + topts + '</select>' + hint + '</div>';
     }
     if (f.t === 'color') {
       var cv = v || f.def || '#3E6B8B';
@@ -258,6 +273,23 @@
     });
     overlay.querySelectorAll('[name=share_w1],[name=share_w2]').forEach(function (i) { i.addEventListener('input', recalcSum); });
     recalcSum();
+
+    // Gewerk-Auswahl im Angebotsformular: Kategorie, Budgetblock, Zuteilung & Split vom Gewerk übernehmen
+    var tradeSel = form.querySelector('[data-tradeselect]');
+    if (tradeSel) {
+      tradeSel.addEventListener('change', function () {
+        var trades = (window.HinterSunStore ? window.HinterSunStore.table('trades') : []) || [];
+        var t = trades.find(function (x) { return String(x.trade) === tradeSel.value; });
+        if (!t) return;
+        var cg = form.querySelector('[name=compare_group]'); if (cg && !cg.value) cg.value = t.trade;
+        var pa = form.querySelector('[name=party_assignment]'); if (pa) pa.value = t.party_assignment || pa.value;
+        var w1 = form.querySelector('[name=share_w1]'), w2 = form.querySelector('[name=share_w2]');
+        if (w1 && t.share_w1 != null && t.share_w1 !== '') { w1.value = t.share_w1; }
+        if (w2 && t.share_w2 != null && t.share_w2 !== '') { w2.value = t.share_w2; }
+        recalcSum();
+        S.toast('Zuordnung von „' + (t.trade || '') + '" übernommen (' + (t.party_assignment || '—') + ', ' + (t.share_w1 || 0) + '/' + (t.share_w2 || 0) + ')', 'ok');
+      });
+    }
 
     function close() { overlay.remove(); }
     overlay.addEventListener('click', function (e) { if (e.target === overlay || e.target.hasAttribute('data-close')) close(); });
