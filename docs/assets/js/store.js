@@ -207,20 +207,28 @@
     await update('offers', offerId, { status: 'Auftrag erteilt', final: 'TRUE' });
 
     // 3) Aktive Kostenposition anlegen (oder reaktivieren)
+    // Zuordnung aus dem Gewerk (trade) übernehmen: Budgetblock + W1/W2-Split
+    var tradeRec = table('trades').find(function (t) { return String(t.trade) === String(offer.trade); });
+    var budgetBlock = (tradeRec && tradeRec.budget_block) || offer.budget_block || group || 'Sonstiges';
+    var party = offer.party_assignment || (tradeRec && tradeRec.party_assignment) || 'gemeinsam';
+    var sw1 = (offer.share_w1 != null && offer.share_w1 !== '') ? offer.share_w1 : (tradeRec ? tradeRec.share_w1 : '');
+    var sw2 = (offer.share_w2 != null && offer.share_w2 !== '') ? offer.share_w2 : (tradeRec ? tradeRec.share_w2 : '');
+
     var existing = table('cost_positions').find(function (c) { return String(c.offer_id) === String(offerId); });
     if (existing) {
-      await update('cost_positions', existing.cost_id, { active: 'TRUE', status: 'beauftragt', gross: offer.gross, net: offer.net });
+      await update('cost_positions', existing.cost_id, { active: 'TRUE', status: 'beauftragt', gross: offer.gross, net: offer.net,
+        category: budgetBlock, party_assignment: party, share_w1: sw1, share_w2: sw2 });
       return { ok: true, cost_id: existing.cost_id, reactivated: true };
     }
     var cost = {
-      category: group || offer.trade || 'Sonstiges',
-      subcategory: '', item: (offer.trade || '') + ' – ' + (offer.supplier || ''),
+      category: budgetBlock,
+      subcategory: (tradeRec && tradeRec.category) || '', item: (offer.trade || '') + ' – ' + (offer.supplier || ''),
       supplier: offer.supplier || '', status: 'beauftragt', source_type: 'Auftrag',
       net: offer.net || 0, vat_rate: offer.vat_rate || 22, gross: offer.gross || 0,
-      party_assignment: offer.party_assignment || 'projekt',
-      split_key: offer.split_key || '', share_w1: offer.share_w1 || '', share_w2: offer.share_w2 || '',
+      party_assignment: party,
+      split_key: offer.split_key || '', share_w1: sw1, share_w2: sw2,
       offer_id: offerId, compare_group: group, active: 'TRUE',
-      final: 'TRUE', paid: 'FALSE', document_id: offer.document_id || '', risk: offer.excluded || ''
+      final: 'TRUE', paid: 'FALSE', paid_amount: 0, document_id: offer.document_id || '', risk: offer.excluded || ''
     };
     var r = await create('cost_positions', cost);
     return { ok: true, cost_id: r && r.id, created: true };
