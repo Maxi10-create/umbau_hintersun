@@ -11,7 +11,7 @@
  * 5) Bereitstellen > Neue Bereitstellung > Web-App.
  */
 
-const BACKEND_VERSION = '6.0.0';
+const BACKEND_VERSION = '6.1.0';
 const PROJECT_NAME = 'Umbau Hintersun 8';
 const SHEET_ORDER = ["settings", "parties", "areas", "budget_estimates", "cost_positions", "offers", "offer_items", "payments", "financing", "bank_offers", "subsidies", "task_categories", "timeline_tasks", "trades", "companies", "bureaucracy", "technicians", "energy_inputs", "energy_results", "documents", "decisions", "cashflow", "audit_log"];
 const SCHEMA = {
@@ -88,6 +88,7 @@ const SCHEMA = {
     "active",
     "final",
     "paid",
+    "paid_amount",
     "payment_due",
     "document_id",
     "risk",
@@ -952,7 +953,7 @@ const SEED_DATA = {
       "source_type": "Auftrag",
       "net": null,
       "vat_rate": "22",
-      "gross": null,
+      "gross": "36000",
       "party_assignment": "gemeinsam",
       "split_key": "thousandths_466_534",
       "share_w1": 46.6,
@@ -961,14 +962,17 @@ const SEED_DATA = {
       "offer_id": null,
       "active": "TRUE",
       "final": "TRUE",
-      "paid": "TRUE",
+      "paid": "FALSE",
       "payment_due": "phasenweise",
       "document_id": "DOC-ARCH-001",
       "risk": "Statik, SiGeKo, Klimahaus, ENEA, Haustechnik nicht enthalten",
       "source": null,
       "created_at": null,
       "updated_at": "2026-07-14T08:13:13.460Z",
-      "paid_by": "Ingrid Harder"
+      "paid_by": "Ingrid Harder",
+      "paid_amount": "22208.25",
+      "date": "2026-04-27",
+      "comment": " | Teilzahlung: 22.208,25 von 36.000 bezahlt"
     },
     {
       "cost_id": "C-STAT-001",
@@ -995,7 +999,8 @@ const SEED_DATA = {
       "risk": "Leistung/Abrechnung final pruefen",
       "source": null,
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "paid_amount": "0"
     },
     {
       "cost_id": "C-PSP-001",
@@ -1023,7 +1028,9 @@ const SEED_DATA = {
       "source": null,
       "created_at": null,
       "updated_at": null,
-      "paid_by": "Ingrid Harder"
+      "paid_by": "Ingrid Harder",
+      "paid_amount": "253.76",
+      "date": "2026-04-27"
     },
     {
       "cost_id": "C-GEM-001",
@@ -1051,7 +1058,9 @@ const SEED_DATA = {
       "source": null,
       "created_at": null,
       "updated_at": null,
-      "paid_by": "Maximilian Hofer"
+      "paid_by": "Maximilian Hofer",
+      "paid_amount": "100.0",
+      "date": "2026-02-24"
     },
     {
       "cost_id": "C-GEM-002",
@@ -1079,7 +1088,9 @@ const SEED_DATA = {
       "source": null,
       "created_at": null,
       "updated_at": null,
-      "paid_by": "Maximilian Hofer"
+      "paid_by": "Maximilian Hofer",
+      "paid_amount": "250.0",
+      "date": "2026-03-10"
     },
     {
       "cost_id": "C-KUE-RESCH",
@@ -1106,7 +1117,8 @@ const SEED_DATA = {
       "risk": "Maurer/Hydrauliker/Elektriker nicht enthalten",
       "source": null,
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "paid_amount": "0"
     },
     {
       "cost_id": "C-KUE-STAMPFL",
@@ -1133,7 +1145,8 @@ const SEED_DATA = {
       "risk": "MwSt, Wasseranschluss, Beleuchtung, Gipskarton nicht enthalten",
       "source": null,
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "paid_amount": "0"
     },
     {
       "cost_id": "C-SIGEKO-001",
@@ -1160,7 +1173,8 @@ const SEED_DATA = {
       "risk": "kritisch fuer Baustart",
       "source": null,
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "paid_amount": "0"
     },
     {
       "cost_id": "C-BLITZ-001",
@@ -1187,7 +1201,8 @@ const SEED_DATA = {
       "risk": "benoetigt fuer Baukonzession laut Notiz",
       "source": null,
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "paid_amount": "0"
     },
     {
       "cost_id": "C-IST-001",
@@ -1217,7 +1232,8 @@ const SEED_DATA = {
       "risk": "",
       "comment": "Ausgabe 1",
       "created_at": "2026-07-14T00:00:00.000Z",
-      "updated_at": "2026-07-14T00:00:00.000Z"
+      "updated_at": "2026-07-14T00:00:00.000Z",
+      "paid_amount": "16.0"
     },
     {
       "cost_id": "C-IST-003",
@@ -1247,7 +1263,8 @@ const SEED_DATA = {
       "risk": "",
       "comment": "Ausgabe 3",
       "created_at": "2026-07-14T00:00:00.000Z",
-      "updated_at": "2026-07-14T00:00:00.000Z"
+      "updated_at": "2026-07-14T00:00:00.000Z",
+      "paid_amount": "32.0"
     },
     {
       "cost_id": "C-IST-007",
@@ -1277,7 +1294,8 @@ const SEED_DATA = {
       "risk": "",
       "comment": "Ausgabe 7",
       "created_at": "2026-07-14T00:00:00.000Z",
-      "updated_at": "2026-07-14T00:00:00.000Z"
+      "updated_at": "2026-07-14T00:00:00.000Z",
+      "paid_amount": "16.0"
     }
   ],
   "offers": [
