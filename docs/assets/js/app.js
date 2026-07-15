@@ -418,116 +418,120 @@
   // ---- Gewerke & Firmen -------------------------------------------------
   function renderTrades() {
     function low(v) { return String(v || '').toLowerCase(); }
-    var GEWERK_CAT = ['Rohbau', 'Gebäudehülle', 'Haustechnik', 'Innenausbau', 'Metallbau', 'Planung & Sicherheit', 'Außenanlagen', 'Sonstiges'];
-
-    // --- Sektion 1: Gewerke nach Kategorie (Zuordnung auf einen Blick) ---
+    function partyBadge(p) {
+      return low(p) === 'w1' ? '<span class="tag" style="background:var(--w1-soft);color:var(--w1)">W1 · Ingrid</span>'
+        : low(p) === 'w2' ? '<span class="tag" style="background:var(--w2-soft);color:var(--w2)">W2 · Maximilian</span>'
+        : '<span class="tag blue">gemeinsam</span>';
+    }
     var trades = (DATA.trades || []).slice();
-    var byCat = {};
-    trades.forEach(function (t) {
-      var c = t.category || 'Sonstiges';
-      (byCat[c] = byCat[c] || []).push(t);
-    });
-    var catCards = Object.keys(byCat).sort().map(function (cat) {
-      var rows = byCat[cat].map(function (t) {
-        var partyTag = low(t.party_assignment) === 'w1' ? '<span class="tag" style="background:var(--w1-soft);color:var(--w1)">W1 · Ingrid</span>'
-          : low(t.party_assignment) === 'w2' ? '<span class="tag" style="background:var(--w2-soft);color:var(--w2)">W2 · Maximilian</span>'
-          : '<span class="tag blue">' + esc(t.party_assignment || 'gemeinsam') + '</span>';
-        var split = (t.share_w1 != null && t.share_w1 !== '') ? (t.share_w1 + '/' + t.share_w2) : '46,6/53,4';
-        return '<tr data-edit-trade="' + esc(t.trade_id) + '">' +
-          '<td><strong>' + esc(t.trade) + '</strong></td>' +
-          '<td>' + esc(t.budget_block || '—') + '</td>' +
-          '<td>' + partyTag + '</td>' +
-          '<td class="mini muted">' + split + '</td>' +
-          '<td>' + tag(t.status) + '</td></tr>';
-      }).join('');
-      return '<div class="gewerk-cat-card">' +
-        '<div class="gewerk-cat-head"><span class="gewerk-cat-dot"></span><strong>' + esc(cat) + '</strong>' +
-        '<span class="mini muted">' + byCat[cat].length + ' Gewerk(e)</span></div>' +
-        '<div class="table-wrap"><table><thead><tr><th>Gewerk</th><th>Budgetblock</th><th>Zuteilung</th><th>W1/W2</th><th>Status</th></tr></thead><tbody>' +
-        rows + '</tbody></table></div></div>';
-    }).join('');
-    var catEl = byId('gewerk-categories');
-    if (catEl) {
-      catEl.innerHTML =
-        '<div class="section-tools"><span class="mini muted">Jedes Gewerk ist einer Kategorie, einem Budgetblock und einer Wohnungs-Zuteilung (W1/W2) zugeordnet – alles per Dropdown. Küche z.B. → W2 / Maximilian.</span>' +
-        '<button class="btn small" data-add-trade>+ Gewerk anlegen</button></div>' +
-        (catCards || '<p class="muted">Noch keine Gewerke angelegt.</p>');
-      var addBtn = catEl.querySelector('[data-add-trade]');
-      if (addBtn) addBtn.addEventListener('click', function () { F.open('trades'); });
-      catEl.querySelectorAll('[data-edit-trade]').forEach(function (tr) {
-        tr.style.cursor = 'pointer';
-        tr.addEventListener('click', function () { F.open('trades', tr.getAttribute('data-edit-trade')); });
+    var offers = (DATA.offers || []).slice();
+
+    // Angebote je Gewerk (über trade_id, Fallback trade-Name)
+    function offersFor(t) {
+      return offers.filter(function (o) {
+        return (o.trade_id && String(o.trade_id) === String(t.trade_id)) ||
+               (!o.trade_id && String(o.trade) === String(t.trade));
       });
     }
 
-    // --- Sektion 2: Vergabe (Angebotsvergleich), gruppiert nach Kategorie ---
-    var byTrade = {};
-    (DATA.trades || []).forEach(function (t) { byTrade[t.trade] = { trade: t, offers: [] }; });
-    (DATA.offers || []).forEach(function (o) {
-      var key = o.compare_group || o.trade;
-      if (!byTrade[key]) byTrade[key] = { trade: { trade: key, status: '', category: 'Sonstiges' }, offers: [] };
-      byTrade[key].offers.push(o);
-    });
-    // gruppiere Vergabe-Karten nach Gewerk-Kategorie
-    var awardByCat = {};
-    Object.keys(byTrade).forEach(function (k) {
-      var cat = (byTrade[k].trade && byTrade[k].trade.category) || 'Sonstiges';
-      (awardByCat[cat] = awardByCat[cat] || []).push(k);
-    });
-    var awardHtml = Object.keys(awardByCat).sort().map(function (cat) {
-      var cards = awardByCat[cat].map(function (k) {
-        var g = byTrade[k];
-        var t = g.trade || {};
-        var offers = g.offers.slice().sort(function (a, b) { return C.num(a.gross) - C.num(b.gross); });
-        var awarded = offers.find(function (o) { return String(o.status) === 'Auftrag erteilt' || String(o.final).toUpperCase() === 'TRUE'; });
-        var cheapest = offers[0];
-        var partyLabel = low(t.party_assignment) === 'w1' ? 'W1 · Ingrid' : low(t.party_assignment) === 'w2' ? 'W2 · Maximilian' : (t.party_assignment || 'gemeinsam');
-        var offerRows = offers.length ? offers.map(function (o) {
-          var isAwd = awarded && o.offer_id === awarded.offer_id;
-          var mark = isAwd ? '<span class="tag ok">✓ vergeben</span>' : (o === cheapest ? '<span class="tag blue">günstigstes</span>' : '');
-          var btn = isAwd ? '<span class="mini muted">beauftragt</span>'
-            : '<button class="btn small award" data-award="' + esc(o.offer_id) + '">vergeben</button>';
-          return '<tr><td>' + esc(o.supplier) + '</td><td>' + eur(o.gross) + '</td><td>' + tag(o.status) + ' ' + mark + '</td><td>' + btn + '</td></tr>';
-        }).join('') : '<tr><td colspan="4" class="muted">Noch keine Angebote – im Bereich „Angebote" anlegen.</td></tr>';
-        return '<div class="trade-award-card">' +
-          '<div class="trade-award-head"><strong>' + esc(k) + '</strong>' +
-          '<span class="tag ' + (low(t.party_assignment) === 'w2' ? 'blue' : '') + '">' + esc(partyLabel) + '</span>' +
-          (t.budget_block ? '<span class="mini muted">' + esc(t.budget_block) + '</span>' : '') +
-          (awarded ? '<span class="tag ok">vergeben an ' + esc(awarded.supplier) + '</span>' : '<span class="tag warn">offen</span>') + '</div>' +
-          '<div class="table-wrap"><table><thead><tr><th>Anbieter</th><th>Brutto</th><th>Status</th><th></th></tr></thead><tbody>' + offerRows + '</tbody></table></div>' +
-          '</div>';
-      }).join('');
-      return '<div class="award-cat-group"><div class="award-cat-title">' + esc(cat) + '</div>' + cards + '</div>';
-    }).join('');
-    var el = byId('trades-award');
-    el.innerHTML = awardHtml || '<p class="muted">Noch keine Gewerke angelegt.</p>';
-    el.querySelectorAll('[data-award]').forEach(function (b) {
-      b.addEventListener('click', async function () {
-        if (!confirm('Dieses Angebot final vergeben? Es wird als Auftrag in „Kosten (Ist)" übernommen; ein bestehender Auftrag derselben Gruppe wird ersetzt.')) return;
-        await S.awardOffer(b.getAttribute('data-award'));
-      });
-    });
+    // ===== SEKTION 1: Gewerke/Aufträge – je Gewerk mit Budgetblock + zugeteilten Angeboten =====
+    var cards = trades.map(function (t) {
+      var tOffers = offersFor(t).sort(function (a, b) { return C.num(a.gross) - C.num(b.gross); });
+      var awarded = tOffers.find(function (o) { return String(o.status) === 'Auftrag erteilt' || String(o.final).toUpperCase() === 'TRUE'; });
+      var cheapest = tOffers[0];
+      var offerRows = tOffers.length ? tOffers.map(function (o) {
+        var isAwd = awarded && o.offer_id === awarded.offer_id;
+        var mark = isAwd ? '<span class="tag ok">✓ vergeben</span>' : (o === cheapest && tOffers.length > 1 ? '<span class="tag blue">günstigstes</span>' : '');
+        var btn = isAwd ? '<button class="btn small ghost" data-unaward="' + esc(o.offer_id) + '">zurücknehmen</button>'
+          : '<button class="btn small award" data-award="' + esc(o.offer_id) + '">vergeben</button>';
+        return '<tr data-edit-offer="' + esc(o.offer_id) + '">' +
+          '<td>' + esc(o.supplier) + '</td>' +
+          '<td>' + eur(o.gross) + '</td>' +
+          '<td>' + tag(o.status) + ' ' + mark + '</td>' +
+          '<td class="row-actions">' + btn + '</td></tr>';
+      }).join('') : '<tr><td colspan="4" class="muted">Noch keine Angebote zugeteilt.</td></tr>';
 
-    // --- Sektion 3: Gewerke-Liste (Tabelle mit allen Feldern) ---
+      var sumAwarded = awarded ? eur(awarded.gross) : '—';
+      return '<div class="gewerk-card">' +
+        '<div class="gewerk-card-head">' +
+          '<div class="gewerk-card-title"><strong>' + esc(t.trade) + '</strong>' +
+            '<span class="mini muted">' + esc(t.category || '—') + '</span></div>' +
+          '<div class="gewerk-card-meta">' + partyBadge(t.party_assignment) +
+            '<span class="tag">' + esc(t.budget_block || 'kein Budgetblock') + '</span>' +
+            (awarded ? '<span class="tag ok">vergeben: ' + sumAwarded + '</span>' : '<span class="tag warn">offen</span>') +
+          '</div>' +
+          '<div class="gewerk-card-btns">' +
+            '<button class="btn small" data-add-offer="' + esc(t.trade_id) + '">+ Angebot</button>' +
+            '<button class="btn small ghost" data-edit-trade="' + esc(t.trade_id) + '">bearbeiten</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="table-wrap"><table><thead><tr><th>Anbieter</th><th>Brutto</th><th>Status</th><th></th></tr></thead><tbody>' +
+        offerRows + '</tbody></table></div>' +
+      '</div>';
+    }).join('');
+
+    var listEl = byId('gewerk-categories');
+    if (listEl) {
+      listEl.innerHTML =
+        '<div class="section-tools"><span class="mini muted">Jedes Gewerk/Auftrag hat einen Budgetblock und eine W1/W2-Zuteilung. Angebote werden dem Gewerk zugeteilt; die Vergabe erzeugt automatisch eine Kostenposition im Budgetblock des Gewerks. Alle Beträge sind Bruttobeträge.</span>' +
+        '<button class="btn" data-add-trade>+ Gewerk / Auftrag</button></div>' +
+        (cards || '<p class="muted">Noch keine Gewerke angelegt.</p>');
+
+      var addT = listEl.querySelector('[data-add-trade]');
+      if (addT) addT.addEventListener('click', function () { F.open('trades'); });
+      listEl.querySelectorAll('[data-edit-trade]').forEach(function (b) {
+        b.addEventListener('click', function (e) { e.stopPropagation(); F.open('trades', b.getAttribute('data-edit-trade')); });
+      });
+      listEl.querySelectorAll('[data-add-offer]').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          F.open('offers', null, { trade_id: b.getAttribute('data-add-offer') });
+        });
+      });
+      listEl.querySelectorAll('[data-edit-offer]').forEach(function (tr) {
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', function (e) {
+          if (e.target.closest('button')) return;
+          F.open('offers', tr.getAttribute('data-edit-offer'));
+        });
+      });
+      listEl.querySelectorAll('[data-award]').forEach(function (b) {
+        b.addEventListener('click', async function (e) {
+          e.stopPropagation();
+          if (!confirm('Dieses Angebot final vergeben? Es wird als Kostenposition (brutto) im Budgetblock des Gewerks übernommen; ein bestehender Auftrag derselben Vergleichsgruppe wird ersetzt.')) return;
+          await S.awardOffer(b.getAttribute('data-award'));
+        });
+      });
+      listEl.querySelectorAll('[data-unaward]').forEach(function (b) {
+        b.addEventListener('click', async function (e) {
+          e.stopPropagation();
+          if (!confirm('Vergabe zurücknehmen? Die zugehörige Kostenposition wird deaktiviert.')) return;
+          await S.unawardOffer(b.getAttribute('data-unaward'));
+        });
+      });
+    }
+
+    // ===== SEKTION 2: Gewerke-Tabelle (CRUD, alle Felder) =====
     section('trades-table', 'trades', [
-      { h: 'Gewerk', get: function (r) { return '<strong>' + esc(r.trade) + '</strong>'; } },
+      { h: 'Gewerk / Auftrag', get: function (r) { return '<strong>' + esc(r.trade) + '</strong>'; } },
       { h: 'Kategorie', get: function (r) { return esc(r.category || '—'); } },
       { h: 'Budgetblock', get: function (r) { return esc(r.budget_block || '—'); } },
-      { h: 'Zuteilung', get: function (r) { return esc(r.party_assignment || 'gemeinsam'); } },
+      { h: 'Zuteilung', get: function (r) { return partyBadge(r.party_assignment); } },
       { h: 'W1/W2', get: function (r) { return (r.share_w1 != null && r.share_w1 !== '') ? (r.share_w1 + '/' + r.share_w2) : '46,6/53,4'; } },
-      { h: 'Prio', get: function (r) { return esc(r.priority); } },
+      { h: 'Angebote', get: function (r) { return String(offersFor(r).length); } },
       { h: 'Status', get: function (r) { return tag(r.status); } }
-    ], { note: 'Gewerk-Kategorie, Budgetblock und W1/W2-Zuteilung per Dropdown. Diese Zuordnung wird bei der Vergabe automatisch auf die Kostenposition übertragen.' });
+    ], { note: 'Gewerk/Auftrag mit Budgetblock und W1/W2-Zuteilung anlegen, bearbeiten oder löschen. Diese Zuordnung wird bei der Vergabe automatisch auf die Kostenposition übertragen.' });
 
+    // ===== SEKTION 3: Alle Angebote (CRUD) – nur Brutto =====
     section('offers-table', 'offers', [
-      { h: 'Gewerk', get: function (r) { return esc(r.trade); } },
-      { h: 'Gruppe', get: function (r) { return esc(r.compare_group || '—'); } },
+      { h: 'Gewerk', get: function (r) { return esc(r.trade || '—'); } },
       { h: 'Anbieter', get: function (r) { return esc(r.supplier); } },
+      { h: 'Vergleichsgruppe', get: function (r) { return esc(r.compare_group || '—'); } },
       { h: 'Brutto', get: function (r) { return eur(r.gross); } },
-      { h: 'Zuteilung', get: function (r) { return esc(r.party_assignment || '—'); } },
+      { h: 'Budgetblock', get: function (r) { return esc(r.budget_block || '—'); } },
       { h: 'Status', get: function (r) { return tag(r.status); } }
     ], {
-      note: 'Gewerk aus der Liste wählen – Kategorie, Budgetblock und W1/W2-Zuteilung werden übernommen. Angebote zählen NICHT automatisch mit; erst die Vergabe oben macht daraus einen Auftrag.',
+      note: 'Angebote werden über das Gewerk zugeteilt (Budgetblock & W1/W2 kommen von dort). Angebote zählen NICHT automatisch mit; erst die Vergabe macht daraus eine Kostenposition. Alle Beträge brutto.',
       rowActions: function (r) {
         var awarded = String(r.status) === 'Auftrag erteilt';
         return awarded ? '<span class="tag ok" style="margin-right:6px">beauftragt</span>'
@@ -542,6 +546,8 @@
         });
       }
     });
+
+    // ===== SEKTION 4: Firmenliste =====
     section('companies-table', 'companies', [
       { h: 'Gewerk-ID', get: function (r) { return esc(r.trade_id); } },
       { h: 'Firma', get: function (r) { return esc(r.company); } },
