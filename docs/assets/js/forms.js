@@ -178,7 +178,10 @@
   function esc(v) { return String(v == null ? '' : v).replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
 
   function fieldHTML(f, rec) {
-    var v = rec ? rec[f.k] : (f.def != null ? f.def : '');
+    var raw = rec ? rec[f.k] : undefined;
+    // Default greift, wenn kein Datensatz ODER der Datensatz dieses Feld nicht
+    // gesetzt hat (z.B. Neuanlage mit Vorbelegung nur einzelner Felder).
+    var v = (raw != null && raw !== '') ? raw : (f.def != null ? f.def : '');
     var hint = f.hint ? '<span class="fhint">' + esc(f.hint) + '</span>' : '';
     if (f.t === 'split') {
       var w1 = rec && rec.share_w1 !== '' && rec.share_w1 != null ? rec.share_w1 : 46.6;
@@ -274,7 +277,21 @@
     overlay.querySelectorAll('[name=share_w1],[name=share_w2]').forEach(function (i) { i.addEventListener('input', recalcSum); });
     recalcSum();
 
-    // Gewerk-Auswahl im Angebotsformular: Vergleichsgruppe/Zuteilung vom Gewerk übernehmen
+    // Live-Berechnung Brutto aus Netto + MwSt, sobald der Nutzer tippt
+    (function () {
+      var netEl = form.querySelector('[name=net]');
+      var vatEl = form.querySelector('[name=vat_rate]');
+      var grossEl = form.querySelector('[name=gross]');
+      if (netEl && grossEl) {
+        function recalcGross() {
+          function pn(x) { if (x == null || x === '') return NaN; var s = String(x).trim(); if (/,\d{1,2}$/.test(s)) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, ''); return parseFloat(s); }
+          var nv = pn(netEl.value); var vv = vatEl ? pn(vatEl.value) : 0;
+          if (!isNaN(nv)) grossEl.value = (nv * (1 + (isNaN(vv) ? 0 : vv) / 100)).toFixed(2);
+        }
+        netEl.addEventListener('input', recalcGross);
+        if (vatEl) vatEl.addEventListener('input', recalcGross);
+      }
+    })();
     var tradeSel = form.querySelector('[data-tradeselect]');
     if (tradeSel) {
       tradeSel.addEventListener('change', function () {
@@ -302,9 +319,24 @@
         if (Math.abs(w1 + w2 - 100) > 0.05) { S.toast('Aufteilung W1+W2 muss 100% ergeben (aktuell ' + (w1 + w2).toFixed(1) + '%)', 'warn'); return; }
         values.share_w1 = w1; values.share_w2 = w2;
       }
-      // Brutto automatisch aus Netto+MwSt, falls leer
-      if ((values.gross === '' || values.gross == null) && values.net) {
-        values.gross = (parseFloat(values.net) * (1 + (parseFloat(values.vat_rate) || 0) / 100)).toFixed(2);
+      // Brutto = Netto x (1 + MwSt). Netto ist die Eingabe-Quelle; wenn Netto
+      // gesetzt ist, wird Brutto IMMER daraus berechnet (nicht nur wenn leer),
+      // damit die MwSt beim erneuten Speichern nicht verloren geht.
+      function parseNum(x) {
+        if (x == null || x === '') return NaN;
+        var s = String(x).trim();
+        if (/,\d{1,2}$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
+        else s = s.replace(/,/g, '');
+        return parseFloat(s);
+      }
+      var netV = parseNum(values.net), vatV = parseNum(values.vat_rate);
+      var grossV = parseNum(values.gross);
+      if (!isNaN(netV)) {
+        // Netto vorhanden -> Brutto daraus ableiten (konsistent, brutto maßgeblich)
+        values.gross = (netV * (1 + (isNaN(vatV) ? 0 : vatV) / 100)).toFixed(2);
+      } else if (!isNaN(grossV)) {
+        // Nur Brutto direkt eingegeben -> normalisieren
+        values.gross = grossV.toFixed(2);
       }
       // Angebot: trade_id → trade-Name auflösen und Zuordnung vom Gewerk übernehmen (robuste Zuteilung)
       if (sheet === 'offers' && values.trade_id) {
