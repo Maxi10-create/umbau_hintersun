@@ -528,3 +528,17 @@ th.w1cell,th.w2cell{font-weight:600}
 .award-cat-group{margin-bottom:20px}
 .award-cat-title{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--accent);font-weight:600;margin:0 0 10px;padding-bottom:5px;border-bottom:1px dashed var(--line-2)}
+
+/* ===== v6.3 Gewerk-Karten mit zugeteilten Angeboten ===== */
+.gewerk-card{border:1px solid var(--line);border-radius:var(--radius-sm);margin-bottom:14px;overflow:hidden;background:var(--surface)}
+.gewerk-card-head{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.gewerk-card-title{display:flex;flex-direction:column;gap:1px;min-width:150px;flex:1}
+.gewerk-card-title strong{font-family:var(--serif);font-size:15.5px}
+.gewerk-card-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.gewerk-card-btns{display:flex;gap:6px}
+.btn.ghost{background:transparent;border:1px solid var(--line-2);color:var(--ink-2)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.gewerk-card .table-wrap{border:0;border-radius:0}
+.gewerk-card tbody tr[data-edit-offer]{cursor:pointer}
+.gewerk-card tbody tr[data-edit-offer]:hover{background:var(--accent-soft)}
+.row-actions{text-align:right;white-space:nowrap}
