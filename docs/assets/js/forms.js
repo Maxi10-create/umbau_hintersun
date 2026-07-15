@@ -28,17 +28,15 @@
   // Feld-Definitionen je Tab. type: text|number|date|select|textarea|bool|split
   var SCHEMAS = {
     offers: { title: 'Angebot', fields: [
-      { k: 'trade', l: 'Gewerk (aus Liste)', t: 'tradeselect', req: true, hint: 'wählt Kategorie, Budgetblock und W1/W2-Zuteilung automatisch' },
-      { k: 'compare_group', l: 'Vergleichsgruppe', t: 'text', hint: 'z.B. "Küche" – mehrere Angebote derselben Gruppe werden verglichen, nicht doppelt gezählt' },
+      { k: 'trade_id', l: 'Gewerk / Auftrag', t: 'tradeselect', req: true, hint: 'Budgetblock und W1/W2-Zuteilung kommen automatisch vom Gewerk' },
       { k: 'supplier', l: 'Anbieter / Firma', t: 'text', req: true },
+      { k: 'compare_group', l: 'Vergleichsgruppe', t: 'text', hint: 'gleiche Gruppe = konkurrierende Angebote (z.B. "Küche"). Leer = eigene Gruppe' },
       { k: 'date', l: 'Datum', t: 'date' },
       { k: 'valid_until', l: 'Gültig bis', t: 'date' },
-      { k: 'net', l: 'Netto €', t: 'number' },
+      { k: 'net', l: 'Netto € (nur Eingabehilfe)', t: 'number', hint: 'optional – daraus wird der Bruttobetrag berechnet' },
       { k: 'vat_rate', l: 'MwSt %', t: 'number', def: 22 },
-      { k: 'gross', l: 'Brutto € (leer = auto)', t: 'number' },
+      { k: 'gross', l: 'Bruttobetrag € (maßgeblich)', t: 'number', hint: 'dieser Betrag zählt im ganzen Dashboard' },
       { k: 'status', l: 'Status', t: 'select', opt: STATUS, def: 'Angebot erfasst' },
-      { k: 'party_assignment', l: 'Zuteilung Wohnung', t: 'select', opt: PARTY, hint: 'leer = vom Gewerk übernehmen' },
-      { k: 'split', l: 'Aufteilung W1/W2', t: 'split' },
       { k: 'score', l: 'Bewertung', t: 'text' },
       { k: 'excluded', l: 'Nicht enthalten / Risiko', t: 'textarea' },
       { k: 'comment', l: 'Notiz', t: 'textarea' }
@@ -202,8 +200,8 @@
     if (f.t === 'tradeselect') {
       var trades = (window.HinterSunStore ? window.HinterSunStore.table('trades') : []) || [];
       var topts = trades.map(function (t) {
-        var label = (t.trade || t.trade_id) + (t.category ? ' · ' + t.category : '');
-        return '<option value="' + esc(t.trade) + '" ' + (String(v) === String(t.trade) ? 'selected' : '') + '>' + esc(label) + '</option>';
+        var label = (t.trade || t.trade_id) + (t.budget_block ? ' → ' + t.budget_block : '');
+        return '<option value="' + esc(t.trade_id) + '" ' + (String(v) === String(t.trade_id) ? 'selected' : '') + '>' + esc(label) + '</option>';
       }).join('');
       return '<div class="field"><label>' + esc(f.l) + '</label><select name="' + f.k + '" data-tradeselect="1"><option value="">— Gewerk wählen —</option>' + topts + '</select>' + hint + '</div>';
     }
@@ -232,13 +230,15 @@
     return '<div class="field"><label>' + esc(f.l) + (f.req ? ' *' : '') + '</label><input type="' + type + '"' + step + ' name="' + f.k + '" value="' + esc(v) + '">' + hint + '</div>';
   }
 
-  function open(sheet, idValue) {
+  function open(sheet, idValue, prefill) {
     var def = SCHEMAS[sheet];
     if (!def) { S.toast('Kein Formular für ' + sheet, 'warn'); return; }
     var rec = null;
     if (idValue != null) {
       var f = S.idField(sheet);
       rec = S.table(sheet).find(function (x) { return String(x[f]) === String(idValue); });
+    } else if (prefill) {
+      rec = Object.assign({}, prefill);   // Neuanlage mit Vorbelegung (z.B. trade_id)
     }
     var body = def.fields.map(function (fl) { return fieldHTML(fl, rec); }).join('');
     var overlay = document.createElement('div');
@@ -274,20 +274,15 @@
     overlay.querySelectorAll('[name=share_w1],[name=share_w2]').forEach(function (i) { i.addEventListener('input', recalcSum); });
     recalcSum();
 
-    // Gewerk-Auswahl im Angebotsformular: Kategorie, Budgetblock, Zuteilung & Split vom Gewerk übernehmen
+    // Gewerk-Auswahl im Angebotsformular: Vergleichsgruppe/Zuteilung vom Gewerk übernehmen
     var tradeSel = form.querySelector('[data-tradeselect]');
     if (tradeSel) {
       tradeSel.addEventListener('change', function () {
         var trades = (window.HinterSunStore ? window.HinterSunStore.table('trades') : []) || [];
-        var t = trades.find(function (x) { return String(x.trade) === tradeSel.value; });
+        var t = trades.find(function (x) { return String(x.trade_id) === tradeSel.value; });
         if (!t) return;
         var cg = form.querySelector('[name=compare_group]'); if (cg && !cg.value) cg.value = t.trade;
-        var pa = form.querySelector('[name=party_assignment]'); if (pa) pa.value = t.party_assignment || pa.value;
-        var w1 = form.querySelector('[name=share_w1]'), w2 = form.querySelector('[name=share_w2]');
-        if (w1 && t.share_w1 != null && t.share_w1 !== '') { w1.value = t.share_w1; }
-        if (w2 && t.share_w2 != null && t.share_w2 !== '') { w2.value = t.share_w2; }
-        recalcSum();
-        S.toast('Zuordnung von „' + (t.trade || '') + '" übernommen (' + (t.party_assignment || '—') + ', ' + (t.share_w1 || 0) + '/' + (t.share_w2 || 0) + ')', 'ok');
+        S.toast('Gewerk „' + (t.trade || '') + '" – Budgetblock ' + (t.budget_block || '—') + ', ' + (t.party_assignment || 'gemeinsam'), 'ok');
       });
     }
 
@@ -311,12 +306,25 @@
       if ((values.gross === '' || values.gross == null) && values.net) {
         values.gross = (parseFloat(values.net) * (1 + (parseFloat(values.vat_rate) || 0) / 100)).toFixed(2);
       }
+      // Angebot: trade_id → trade-Name auflösen und Zuordnung vom Gewerk übernehmen (robuste Zuteilung)
+      if (sheet === 'offers' && values.trade_id) {
+        var tr = (S.table('trades') || []).find(function (x) { return String(x.trade_id) === String(values.trade_id); });
+        if (tr) {
+          values.trade = tr.trade;
+          if (!values.compare_group) values.compare_group = tr.trade;
+          // Zuteilung/Split vom Gewerk erben, wenn nicht ausdrücklich gesetzt
+          if (values.party_assignment == null || values.party_assignment === '') values.party_assignment = tr.party_assignment || 'gemeinsam';
+          if (values.share_w1 == null || values.share_w1 === '') values.share_w1 = tr.share_w1;
+          if (values.share_w2 == null || values.share_w2 === '') values.share_w2 = tr.share_w2;
+          values.budget_block = tr.budget_block;
+        }
+      }
       // Pflichtfelder
       var missing = def.fields.filter(function (fl) { return fl.req && !String(values[fl.k] || '').trim(); });
       if (missing.length) { S.toast('Pflichtfeld fehlt: ' + missing[0].l, 'warn'); return; }
 
       var btn = overlay.querySelector('[data-save]'); btn.disabled = true; btn.textContent = 'Speichern…';
-      if (rec) await S.update(sheet, idValue, values);
+      if (idValue != null) await S.update(sheet, idValue, values);
       else await S.create(sheet, values);
       close();
     });
