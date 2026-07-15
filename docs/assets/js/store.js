@@ -234,6 +234,16 @@
     return { ok: true, cost_id: r && r.id, created: true };
   }
 
+  async function unawardOffer(offerId) {
+    var offer = table('offers').find(function (o) { return String(o.offer_id) === String(offerId); });
+    if (!offer) return { ok: false, error: 'Angebot nicht gefunden' };
+    await update('offers', offerId, { status: 'Angebot erfasst', final: 'FALSE' });
+    var cost = table('cost_positions').find(function (c) { return String(c.offer_id) === String(offerId) && String(c.active).toUpperCase() !== 'FALSE'; });
+    if (cost) await update('cost_positions', cost.cost_id, { active: 'FALSE', status: 'zurückgenommen' });
+    toast('Vergabe zurückgenommen', 'ok');
+    return { ok: true };
+  }
+
   var LABELS = {
     parties: 'Partei', areas: 'Einheit', budget_estimates: 'Kostenschätzung',
     cost_positions: 'Kostenposition', offers: 'Angebot', payments: 'Zahlung',
@@ -247,6 +257,6 @@
   window.HinterSunStore = {
     state: state, load: load, onChange: onChange,
     table: table, idField: idField, labelOf: labelOf, today: today,
-    create: create, update: update, remove: remove, awardOffer: awardOffer, toast: toast
+    create: create, update: update, remove: remove, awardOffer: awardOffer, unawardOffer: unawardOffer, toast: toast
   };
 })();
