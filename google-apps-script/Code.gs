@@ -11,7 +11,7 @@
  * 5) Bereitstellen > Neue Bereitstellung > Web-App.
  */
 
-const BACKEND_VERSION = '6.3.0';
+const BACKEND_VERSION = '6.3.2';
 const PROJECT_NAME = 'Umbau Hintersun 8';
 const SHEET_ORDER = ["settings", "parties", "areas", "budget_estimates", "cost_positions", "offers", "offer_items", "payments", "financing", "bank_offers", "subsidies", "task_categories", "timeline_tasks", "trades", "companies", "bureaucracy", "technicians", "energy_inputs", "energy_results", "documents", "decisions", "cashflow", "audit_log"];
 const SCHEMA = {
@@ -3932,10 +3932,21 @@ function readSheet_(name) {
   assertSheet_(name);
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   if (!sh || sh.getLastRow() < 2) return [];
-  const values = sh.getRange(1,1,sh.getLastRow(),sh.getLastColumn()).getDisplayValues();
+  // Rohwerte (getValues) statt getDisplayValues: sonst kommen zahlen als
+  // lokalisierte Strings ("12.200,00") zurueck und werden falsch geparst.
+  const rng = sh.getRange(1,1,sh.getLastRow(),sh.getLastColumn());
+  const values = rng.getValues();
   const headers = values[0].map(String);
   return values.slice(1).filter(row => row.some(c => String(c).trim() !== '')).map(row => {
-    const obj = {}; headers.forEach((h,i) => obj[h] = row[i]); return obj;
+    const obj = {};
+    headers.forEach((h,i) => {
+      var c = row[i];
+      // Datum -> ISO, Zahl -> unformatierter String (Punkt als Dezimaltrenner), sonst String
+      if (c instanceof Date) obj[h] = Utilities.formatDate(c, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      else if (typeof c === 'number') obj[h] = String(c);
+      else obj[h] = c;
+    });
+    return obj;
   });
 }
 
@@ -4102,13 +4113,23 @@ function awardOffer_(offerId) {
 
 /** Menü-Wrapper für die einmalige Migration. */
 function migrateSchema() {
-  const report = migrateSchema_();
+  var report;
+  try {
+    report = migrateSchema_();
+  } catch (err) {
+    SpreadsheetApp.getUi().alert(
+      'Migration fehlgeschlagen:\n\n' + (err && err.message ? err.message : err) +
+      '\n\nBitte erneut ausführen. Falls der Fehler bleibt, Apps Script neu laden (Seite aktualisieren) und nochmal versuchen – "unknown error" ist meist ein vorübergehendes Google-Problem.'
+    );
+    return;
+  }
   SpreadsheetApp.getUi().alert(
     'Migration abgeschlossen.\n\n' +
     'Neu angelegt: ' + (report.created.join(', ') || '–') + '\n' +
     'Spalten ergänzt/neu geordnet: ' + (report.reordered.join(', ') || '–') + '\n' +
-    'Unverändert: ' + report.unchanged + ' Tabs.\n\n' +
-    'Bestehende Daten wurden zeilenweise nach Spaltenname übernommen.'
+    'Unverändert: ' + report.unchanged + ' Tabs.\n' +
+    ((report.errors && report.errors.length) ? '\n⚠ Übersprungen (Fehler): ' + report.errors.join(' | ') + '\n' : '') +
+    '\nBestehende Daten wurden zeilenweise nach Spaltenname übernommen.'
   );
 }
 
@@ -4124,6 +4145,7 @@ function migrateSchema_() {
   const report = {created:[], reordered:[], unchanged:0};
 
   SHEET_ORDER.forEach(function(name){
+   try {
     const headers = SCHEMA[name];
     let sh = ss.getSheetByName(name);
 
@@ -4138,7 +4160,7 @@ function migrateSchema_() {
 
     // Aktuelle Kopfzeile lesen
     const lastCol = Math.max(1, sh.getLastColumn());
-    const current = sh.getRange(1,1,1,lastCol).getDisplayValues()[0]
+    const current = sh.getRange(1,1,1,lastCol).getValues()[0]
       .map(function(x){ return String(x).trim(); })
       .filter(function(x){ return x !== ''; });
 
@@ -4161,6 +4183,9 @@ function migrateSchema_() {
     }
     sh.setFrozenRows(1);
     report.reordered.push(name);
+   } catch(err) {
+    (report.errors = report.errors || []).push(name + ': ' + (err && err.message ? err.message : err));
+   }
   });
 
   // Standard-Kategorien fuer die Timeline anlegen, falls noch keine existieren
