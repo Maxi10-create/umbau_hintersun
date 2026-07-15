@@ -11,7 +11,7 @@
  * 5) Bereitstellen > Neue Bereitstellung > Web-App.
  */
 
-const BACKEND_VERSION = '6.3.2';
+const BACKEND_VERSION = '6.3.3';
 const PROJECT_NAME = 'Umbau Hintersun 8';
 const SHEET_ORDER = ["settings", "parties", "areas", "budget_estimates", "cost_positions", "offers", "offer_items", "payments", "financing", "bank_offers", "subsidies", "task_categories", "timeline_tasks", "trades", "companies", "bureaucracy", "technicians", "energy_inputs", "energy_results", "documents", "decisions", "cashflow", "audit_log"];
 const SCHEMA = {
@@ -3950,10 +3950,29 @@ function readSheet_(name) {
   });
 }
 
+function sheetHeaders_(sh, name) {
+  // Echte Kopfzeile des Blatts lesen; fehlt sie, SCHEMA als Fallback verwenden.
+  var lastCol = sh.getLastColumn();
+  if (lastCol < 1) {
+    var h = SCHEMA[name];
+    sh.getRange(1,1,1,h.length).setValues([h]);
+    return h.slice();
+  }
+  var hdr = sh.getRange(1,1,1,lastCol).getValues()[0].map(function(x){ return String(x).trim(); });
+  // Trailing-Leerspalten entfernen
+  while (hdr.length && hdr[hdr.length-1] === '') hdr.pop();
+  // Fehlen im echten Blatt Spalten aus dem SCHEMA? -> hinten anhaengen, damit keine Daten verloren gehen.
+  var schema = SCHEMA[name] || [];
+  var added = false;
+  schema.forEach(function(col){ if (hdr.indexOf(col) < 0) { hdr.push(col); added = true; } });
+  if (added) sh.getRange(1,1,1,hdr.length).setValues([hdr]);
+  return hdr;
+}
+
 function appendRow_(name, data) {
   assertSheet_(name);
   const sh = getOrCreateSheet_(name);
-  const headers = SCHEMA[name];
+  const headers = sheetHeaders_(sh, name);      // echte Blatt-Header (nach Namen mappen!)
   const idField = ID_FIELDS[name];
   if (idField && !data[idField]) data[idField] = generateId_(name);
   const row = headers.map(h => data[h] === undefined ? '' : data[h]);
@@ -3965,7 +3984,7 @@ function batchAppend_(name, rows) {
   assertSheet_(name);
   if (!rows.length) return {ok:true, action:'batchAppend', count:0};
   const sh = getOrCreateSheet_(name);
-  const headers = SCHEMA[name];
+  const headers = sheetHeaders_(sh, name);
   const idField = ID_FIELDS[name];
   const values = rows.map(data => {
     if (idField && !data[idField]) data[idField] = generateId_(name);
@@ -3987,12 +4006,15 @@ function updateById_(name, idField, idValue, data, silentNotFound) {
   if (!idField) return {ok:false, error:'No idField configured'};
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   if (!sh) return {ok:false, error:'Sheet not found'};
-  const values = sh.getDataRange().getDisplayValues();
-  const headers = values[0].map(String);
+  var headers = sheetHeaders_(sh, name);        // fügt fehlende SCHEMA-Spalten hinten an
+  // Falls data Felder enthält, die weder im Blatt noch im SCHEMA sind: auch anhängen
+  var extra = Object.keys(data).filter(function(k){ return headers.indexOf(k) < 0; });
+  if (extra.length) { headers = headers.concat(extra); sh.getRange(1,1,1,headers.length).setValues([headers]); }
   const idCol = headers.indexOf(idField);
   if (idCol < 0) return {ok:false, error:'ID field not found'};
-  for (let r=1; r<values.length; r++) {
-    if (String(values[r][idCol]) === String(idValue)) {
+  const idVals = sh.getRange(1, idCol+1, Math.max(1, sh.getLastRow()), 1).getValues();
+  for (let r=1; r<idVals.length; r++) {
+    if (String(idVals[r][0]) === String(idValue)) {
       Object.keys(data).forEach(k => { const c=headers.indexOf(k); if (c>=0) sh.getRange(r+1,c+1).setValue(data[k]); });
       return {ok:true, action:'updateById', sheet:name, row:r+1, id:idValue};
     }
