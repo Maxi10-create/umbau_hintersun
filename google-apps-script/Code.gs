@@ -11,7 +11,7 @@
  * 5) Bereitstellen > Neue Bereitstellung > Web-App.
  */
 
-const BACKEND_VERSION = '6.2.0';
+const BACKEND_VERSION = '6.3.0';
 const PROJECT_NAME = 'Umbau Hintersun 8';
 const SHEET_ORDER = ["settings", "parties", "areas", "budget_estimates", "cost_positions", "offers", "offer_items", "payments", "financing", "bank_offers", "subsidies", "task_categories", "timeline_tasks", "trades", "companies", "bureaucracy", "technicians", "energy_inputs", "energy_results", "documents", "decisions", "cashflow", "audit_log"];
 const SCHEMA = {
@@ -103,6 +103,7 @@ const SCHEMA = {
   "offers": [
     "offer_id",
     "trade",
+    "trade_id",
     "compare_group",
     "supplier",
     "date",
@@ -113,6 +114,7 @@ const SCHEMA = {
     "status",
     "final",
     "active",
+    "budget_block",
     "party_assignment",
     "split_key",
     "share_w1",
@@ -1312,8 +1314,8 @@ const SEED_DATA = {
       "date": "2026-05-22",
       "valid_until": "2026-06-21",
       "net": "22442",
-      "vat_rate": null,
-      "gross": "22442",
+      "vat_rate": "22",
+      "gross": "27379.24",
       "status": null,
       "final": "FALSE",
       "active": null,
@@ -1327,7 +1329,8 @@ const SEED_DATA = {
       "document_id": "DOC-KUE-RESCH",
       "comment": "Keramik Arbeitsplatte, NEFF/Bora laut Angebot",
       "created_at": null,
-      "updated_at": "2026-07-14T08:12:07.847Z"
+      "updated_at": "2026-07-14T08:12:07.847Z",
+      "trade_id": "TR-KUE"
     },
     {
       "offer_id": "OFF-STAMPFL-20260320",
@@ -1337,8 +1340,8 @@ const SEED_DATA = {
       "date": "2026-03-20",
       "valid_until": "2026-04-19",
       "net": "25900",
-      "vat_rate": null,
-      "gross": "25900",
+      "vat_rate": "22",
+      "gross": "31598.0",
       "status": null,
       "final": "FALSE",
       "active": null,
@@ -1352,18 +1355,19 @@ const SEED_DATA = {
       "document_id": "DOC-KUE-STAMPFL",
       "comment": "Quarzit, Miele, Bora PURA2",
       "created_at": null,
-      "updated_at": "2026-07-14T08:12:17.111Z"
+      "updated_at": "2026-07-14T08:12:17.111Z",
+      "trade_id": "TR-KUE"
     },
     {
       "offer_id": "OFF-KLEMENT-20260312",
-      "trade": "Architektur",
-      "compare_group": null,
+      "trade": "Techniker/Planung",
+      "compare_group": "Klement",
       "supplier": "Klement Architects",
       "date": "2026-03-12",
       "valid_until": null,
       "net": "36000",
       "vat_rate": "22",
-      "gross": 45676.8,
+      "gross": "43920.0",
       "status": "beauftragt",
       "final": "TRUE",
       "active": null,
@@ -1377,18 +1381,19 @@ const SEED_DATA = {
       "document_id": "DOC-ARCH-001",
       "comment": "Skontiertes Honorar inkl. Nebenkosten + 4% Gesundheitssteuer + MwSt",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "trade_id": "TR-TECH"
     },
     {
       "offer_id": "OFF-PSP-20260316",
-      "trade": "Steuerberatung",
-      "compare_group": null,
+      "trade": "Techniker/Planung",
+      "compare_group": "PSP",
       "supplier": "PSP STP GmbH",
       "date": "2026-03-16",
       "valid_until": "2026-04-05",
       "net": "800",
       "vat_rate": "22",
-      "gross": "976",
+      "gross": "976.0",
       "status": "teilweise genutzt",
       "final": "FALSE",
       "active": null,
@@ -1402,18 +1407,19 @@ const SEED_DATA = {
       "document_id": "DOC-PSP-001",
       "comment": "erste Rechnung 253,76 EUR laut Notiz bezahlt",
       "created_at": null,
-      "updated_at": null
+      "updated_at": null,
+      "trade_id": "TR-TECH"
     },
     {
       "offer_id": "OFF-TROGER-20260314",
-      "trade": "Statik",
-      "compare_group": "Statik",
+      "trade": "Techniker/Planung",
+      "compare_group": "Dipl.-Ing.",
       "supplier": "Dipl.-Ing. Manuel Troger",
       "date": "2026-03-14",
       "valid_until": "",
       "net": "3700",
       "vat_rate": "22",
-      "gross": "4514",
+      "gross": "4514.0",
       "status": "Auftrag erteilt",
       "final": "TRUE",
       "active": "TRUE",
@@ -1427,12 +1433,13 @@ const SEED_DATA = {
       "document_id": "DOC-STATIK-TROGER",
       "comment": "Angebotsgrundlage Einreichprojekt 04.03.2026",
       "created_at": "2026-07-13T00:00:00.000Z",
-      "updated_at": "2026-07-13T00:00:00.000Z"
+      "updated_at": "2026-07-13T00:00:00.000Z",
+      "trade_id": "TR-TECH"
     }
   ],
   "offer_items": [
     {
-      "offer_item_id": null,
+      "offer_item_id": "OFI-1000",
       "offer_id": "OFF-RESCH-20260522",
       "position": "1",
       "description": "Kuechenmoebel laut Angebot",
@@ -1445,7 +1452,7 @@ const SEED_DATA = {
       "updated_at": "2026-07-14T10:00:00.000Z"
     },
     {
-      "offer_item_id": null,
+      "offer_item_id": "OFI-1001",
       "offer_id": "OFF-STAMPFL-20260320",
       "position": "1",
       "description": "Kuechen Verbau",
@@ -1458,7 +1465,7 @@ const SEED_DATA = {
       "updated_at": "2026-07-14T10:00:00.000Z"
     },
     {
-      "offer_item_id": null,
+      "offer_item_id": "OFI-1002",
       "offer_id": "OFF-STAMPFL-20260320",
       "position": "2",
       "description": "Arbeitsplatten",
@@ -1471,7 +1478,7 @@ const SEED_DATA = {
       "updated_at": "2026-07-14T10:00:00.000Z"
     },
     {
-      "offer_item_id": null,
+      "offer_item_id": "OFI-1003",
       "offer_id": "OFF-STAMPFL-20260320",
       "position": "3",
       "description": "Einbaugeraete und Zubehoer",
@@ -2822,6 +2829,24 @@ const SEED_DATA = {
       "share_w2": "100",
       "created_at": "2026-07-14T18:00:00.000Z",
       "updated_at": "2026-07-14T18:00:00.000Z"
+    },
+    {
+      "trade_id": "TR-TECH",
+      "trade": "Techniker/Planung",
+      "priority": "hoch",
+      "owner": "Maximilian Hofer",
+      "target_request": "",
+      "target_award": "",
+      "status": "laufend",
+      "blocks_construction_start": "FALSE",
+      "comment": "Sammelgewerk: Architekt, Statiker, Steuerberater, Sicherheitskoordination",
+      "created_at": "2026-07-14T20:00:00.000Z",
+      "updated_at": "2026-07-14T20:00:00.000Z",
+      "category": "Planung & Sicherheit",
+      "budget_block": "Planung & Technik",
+      "party_assignment": "gemeinsam",
+      "share_w1": "46.6",
+      "share_w2": "53.4"
     }
   ],
   "companies": [
