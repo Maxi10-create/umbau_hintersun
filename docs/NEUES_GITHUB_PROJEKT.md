@@ -20,9 +20,9 @@ Repo öffnen → **Settings** → ganz unten **Danger Zone** → **Delete this r
 
 ## Schritt 3 – Dateien hochladen
 1. Im neuen Repo: **Add file → Upload files**.
-2. Aus diesem Paket den **gesamten Inhalt** hineinziehen – am einfachsten den entpackten Ordner öffnen und alles markieren (`docs/`, `google-apps-script/`, `google-sheets/`, `data/`, `README.md`, die Anleitungen, `manifest.json`, `LICENSE`).
+2. Aus diesem Paket den **gesamten Inhalt** hineinziehen – am einfachsten den entpackten Ordner öffnen und alles markieren (`index.html`, `assets/`, `apps_script/`, `data/`, `docs/`, `README.md`, `manifest.json`, `LICENSE`).
    - GitHub übernimmt Unterordner beim Drag-and-drop automatisch.
-   - Wichtig ist vor allem der Ordner **`docs/`** – der wird zur Website.
+   - Die Website liegt im Repo-Root (`index.html` + `assets/`). GitHub Pages: **Settings › Pages › Branch `main` / `(root)`**.
 3. Unten **Commit changes**.
 
 > Die vorhandene README aus Schritt 2 wird dabei durch die aus dem Paket ersetzt – das ist gewollt.
@@ -30,7 +30,7 @@ Repo öffnen → **Settings** → ganz unten **Danger Zone** → **Delete this r
 ## Schritt 4 – GitHub Pages einschalten
 1. Im Repo: **Settings → Pages** (linke Leiste).
 2. Unter **Build and deployment → Source:** „Deploy from a branch".
-3. **Branch:** `main` auswählen, **Ordner:** `/docs` → **Save**.
+3. **Branch:** `main` auswählen, **Ordner:** `/ (root)` → **Save**.
 4. 1–2 Minuten warten. Oben auf der Pages-Seite erscheint dann der Link:
    `https://<dein-name>.github.io/umbau-hintersun-8/`
 
@@ -44,14 +44,14 @@ Steht dort „Fallback-Daten", ist meist das Backend noch nicht neu bereitgestel
 
 ## Backend nicht vergessen (einmalig)
 Das Google-Backend ist unabhängig vom GitHub-Repo, muss aber auf den neuen Code:
-1. Apps Script: Inhalt von `google-apps-script/Code.gs` ersetzen → **Speichern**.
+1. Apps Script: Inhalt von `apps_script/Code.gs` ersetzen → **Speichern**.
 2. **Bereitstellen → Bereitstellungen verwalten → ✎ → Version: „Neue Version" → Bereitstellen** (die Web-App-URL bleibt gleich).
 3. Im Sheet-Menü **„Umbau H8 Backend → Migration: Schema aktualisieren (v2)"** einmal ausführen.
 4. Test: `…/exec?action=health` muss `"version":"2.0.0"` liefern.
 
-Ausführliche Fassung: siehe `SCHRITT_FUER_SCHRITT.md`.
+Ausführliche Fassung: siehe [`SCHRITT_FUER_SCHRITT.md`](SCHRITT_FUER_SCHRITT.md).
 
 ---
 
 ## Falls der neue Name doch abweicht
-Ändert sich der Repo-Name, ändert sich nur die **Website-Adresse**, nicht die Google-Backend-URL. Die Backend-URL in `docs/assets/js/config.js` (`apiUrl:`) bleibt also unverändert – dort ist nichts anzupassen. Du musst dir nur den neuen Pages-Link merken.
+Ändert sich der Repo-Name, ändert sich nur die **Website-Adresse**, nicht die Google-Backend-URL. Die Backend-URL in `assets/js/config.js` (`apiUrl:`) bleibt also unverändert – dort ist nichts anzupassen. Du musst dir nur den neuen Pages-Link merken.

@@ -1,6 +1,6 @@
 # Umbau Hintersun 8 – Schritt für Schritt
 
-Komplettes, lauffähiges Paket. Du löschst auf GitHub den alten Stand und lädst diesen hoch. Die bestehende Web-App-URL bleibt erhalten – sie steht bereits in `docs/assets/js/config.js`.
+Komplettes, lauffähiges Paket. Du löschst auf GitHub den alten Stand und lädst diesen hoch. Die bestehende Web-App-URL bleibt erhalten – sie steht bereits in `assets/js/config.js`.
 
 **Reihenfolge unbedingt einhalten: erst Backend, dann Frontend.**
 
@@ -9,7 +9,7 @@ Komplettes, lauffähiges Paket. Du löschst auf GitHub den alten Stand und läds
 ## Teil A – Backend (Google Apps Script + Sheet)
 
 **A1. Code ersetzen**
-Apps-Script-Projekt öffnen → gesamten Inhalt von `google-apps-script/Code.gs` markieren und löschen → kompletten neuen Inhalt aus diesem Paket (`google-apps-script/Code.gs`) einfügen → **Speichern** (Diskettensymbol).
+Apps-Script-Projekt öffnen → gesamten Inhalt von `apps_script/Code.gs` markieren und löschen → kompletten neuen Inhalt aus diesem Paket (`apps_script/Code.gs`) einfügen → **Speichern** (Diskettensymbol).
 
 **A2. Neu bereitstellen (gleiche URL behalten)**
 Oben rechts **Bereitstellen → Bereitstellungen verwalten** → bei der bestehenden Web-App auf **✎ (Bearbeiten)** → unter *Version* **„Neue Version"** wählen → **Bereitstellen**.
@@ -33,19 +33,18 @@ Erwartung: `{"ok":true,"version":"5.0.0",…}`. Wenn Version **5.0.0** kommt, is
 
 ## Teil B – Frontend (GitHub Pages)
 
-> Ziel: alten Stand im Ordner `docs/` durch den neuen ersetzen. Die einfachste Variante:
+> Ziel: alten Stand der Website (`index.html` + `assets/` im Repo-Root) durch den neuen ersetzen. Die einfachste Variante:
 
 **Variante 1 – im Browser (empfohlen, keine Tools nötig)**
-1. Auf GitHub ins Repository → Ordner **`docs`** öffnen.
-2. Alte Dateien löschen: pro Datei/Ordner → **⋯ / Papierkorb-Symbol → Commit**. (Mindestens `docs/index.html` und den Ordner `docs/assets/js/` müssen weg – am saubersten den ganzen `docs`-Inhalt.)
-   Die Bilder in `docs/assets/img/` kannst du liegen lassen, wenn sie unverändert sind – dieses Paket enthält sie aber ebenfalls.
-3. **Add file → Upload files** → aus diesem Paket den kompletten Inhalt von `docs/` per Drag-and-drop hochladen (inkl. Unterordner `assets/…`) → unten **Commit changes**.
+1. Auf GitHub ins Repository (Root) wechseln.
+2. Alte Dateien löschen: pro Datei/Ordner → **⋯ / Papierkorb-Symbol → Commit**. (Mindestens `index.html` und den Ordner `assets/js/` müssen weg.)
+3. **Add file → Upload files** → aus diesem Paket `index.html` und den Ordner `assets/` per Drag-and-drop hochladen → unten **Commit changes**.
 
 **Variante 2 – mit Git (falls du lokal arbeitest)**
 ```
-# im Repo-Ordner, alten docs-Stand ersetzen
-rm -rf docs
-cp -r /Pfad/zu/diesem/Paket/docs ./docs
+# im Repo-Ordner, alten Website-Stand ersetzen
+rm -rf index.html assets
+cp -r /Pfad/zu/diesem/Paket/index.html /Pfad/zu/diesem/Paket/assets .
 git add -A
 git commit -m "Dashboard v2: CRUD, Auftragslogik, Gantt, Energie, neues Design"
 git push
@@ -70,7 +69,7 @@ window.HinterSunDataAdapter.loadData().then(console.log)   // online:true?
 
 Ohne Token kann jeder mit der URL schreiben. Wenn du das absichern willst:
 1. Backend-Menü **„API Token setzen"** → im Ausführungs-Log erscheint ein `WRITE_TOKEN`.
-2. Diesen Wert in `docs/assets/js/config.js` bei `writeToken: ""` eintragen → committen.
+2. Diesen Wert in `assets/js/config.js` bei `writeToken: ""` eintragen → committen.
 Solange kein Token gesetzt ist, funktioniert alles ohne diesen Schritt.
 
 ---
