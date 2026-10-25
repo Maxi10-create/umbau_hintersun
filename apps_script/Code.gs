@@ -7,7 +7,7 @@
  * 1) Leeres Google Sheet erstellen.
  * 2) Erweiterungen > Apps Script > diese Datei einfuegen.
  * 3) setupWorkbookWithSeedData() einmal ausfuehren.
- * 4) setApiToken() ausfuehren und Token in docs/assets/js/config.js eintragen.
+ * 4) setApiToken() ausfuehren und Token in assets/js/config.js eintragen.
  * 5) Bereitstellen > Neue Bereitstellung > Web-App.
  */
 
@@ -3805,7 +3805,7 @@ function setApiToken() {
   const token = Utilities.getUuid();
   PropertiesService.getScriptProperties().setProperty('WRITE_TOKEN', token);
   Logger.log('WRITE_TOKEN: ' + token);
-  SpreadsheetApp.getUi().alert('WRITE_TOKEN wurde erzeugt. Apps-Script-Log oeffnen und Token in docs/assets/js/config.js eintragen.');
+  SpreadsheetApp.getUi().alert('WRITE_TOKEN wurde erzeugt. Apps-Script-Log oeffnen und Token in assets/js/config.js eintragen.');
 }
 
 function healthCheck() {
